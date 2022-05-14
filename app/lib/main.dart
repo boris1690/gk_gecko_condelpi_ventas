@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       onGenerateRoute: route.controller,
-      initialRoute: route.questionnaireScreen,
+      initialRoute: route.loginScreen,
       theme: ThemeData(
           textTheme: GoogleFonts.openSansTextTheme(
             Theme.of(context).textTheme,
