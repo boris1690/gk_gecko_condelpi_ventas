@@ -1,9 +1,13 @@
 import 'package:app/screens/Home/index.dart';
 import 'package:flutter/material.dart';
+import 'package:get/route_manager.dart';
+import 'package:get_storage/get_storage.dart';
 import 'route/route.dart' as route;
 import 'package:google_fonts/google_fonts.dart';
 
-void main() {
+void main() async {
+  await GetStorage.init();
+
   runApp(const MyApp());
 }
 
@@ -13,9 +17,9 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return GetMaterialApp(
       onGenerateRoute: route.controller,
-      initialRoute: route.questionnaireScreen,
+      initialRoute: route.splashScreen,
       theme: ThemeData(
           textTheme: GoogleFonts.openSansTextTheme(
             Theme.of(context).textTheme,
