@@ -6,71 +6,89 @@ import 'package:app/theme/theme.dart' as theme;
 
 class SquareRound extends StatelessWidget {
   final String icon;
+  final String image;
   final String product;
   final String url;
   final double height;
   final double width;
+  final bool activeSwitch;
   final bool check;
-  const SquareRound(
-      {Key? key,
-      required this.icon,
-      required this.product,
-      required this.url,
-      this.height = 240.0,
-      this.width = 190.0,
-      this.check = false})
-      : super(key: key);
+  final VoidCallback? onTap;
+  const SquareRound({
+    Key? key,
+    this.icon = '',
+    this.image = '',
+    required this.product,
+    this.url = '',
+    this.height = 220,
+    this.width = 180,
+    this.check = false,
+    this.activeSwitch = false,
+    this.onTap,
+  }) : super(key: key);
+
+  Widget imageRender() {
+    print('aqui');
+    print(image);
+    if (icon != '')
+      return Image.asset(icon, height: height * 0.3, fit: BoxFit.fill);
+    else
+      return Image.network(image, height: height * 0.3, fit: BoxFit.fill);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => Navigator.pushNamed(context, url),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Container(
-            height: height,
-            width: width,
-            /* color: Colors.transparent, */
-            decoration: Styles.boxDecorationStyle,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Center(
+      child: Container(
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            highlightColor: Colors.transparent,
+            onTap: () => onTap != null
+                ? onTap?.call()
+                : Navigator.pushNamed(context, url),
+            child: Stack(
+              alignment: Alignment.center,
               children: [
                 Container(
-                  child: Center(
-                    child: Image.asset(icon,
-                        height: height * 0.3, fit: BoxFit.fill),
+                  height: height,
+                  width: width,
+                  /* color: Colors.transparent, */
+                  decoration:
+                      Styles.boxDecorationStyle(activeSwitch ? check : true),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        child: Center(child: imageRender()),
+                      ),
+                      Container(
+                        padding: EdgeInsets.only(top: 5),
+                        child: Center(
+                          child: Text(
+                            product,
+                            style: Styles.fontStyle,
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                Container(
-                  padding: EdgeInsets.only(top: 20),
-                  child: Center(
-                    child: Text(
-                      product,
-                      style: Styles.fontStyle,
-                      textAlign: TextAlign.center,
+                if (activeSwitch)
+                  Positioned(
+                    top: 5,
+                    right: 5,
+                    child: Container(
+                      width: width * 0.1,
+                      height: width * 0.1,
+                      decoration: Styles.cornerDecorationStyle,
                     ),
                   ),
-                ),
               ],
             ),
           ),
-          if (check)
-            Positioned(
-              top: -30,
-              right: -30,
-              child: Container(
-                width: width * 0.5,
-                height: width * 0.5,
-                decoration: Styles.cornerDecorationStyle,
-                child: Icon(
-                  Icons.check_circle_outline,
-                  color: theme.Colors.greenColor,
-                  size: width * 0.4,
-                ),
-              ),
-            ),
-        ],
+        ),
       ),
     );
   }

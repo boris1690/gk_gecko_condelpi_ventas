@@ -10,6 +10,8 @@ const String homeScreen = 'home';
 const String optionScreen = 'option';
 const String questionnaireScreen = 'questionnaire';
 const String splashScreen = 'splash';
+const String quoteStep1Screen = 'quoteStep1';
+const String quoteStep2Screen = 'quoteStep2';
 
 // Control our page route flow
 Route<dynamic> controller(RouteSettings settings) {
@@ -24,6 +26,10 @@ Route<dynamic> controller(RouteSettings settings) {
       return MaterialPageRoute(builder: (context) => screens.Option());
     case questionnaireScreen:
       return MaterialPageRoute(builder: (context) => screens.Questionnaire());
+    case quoteStep1Screen:
+      return MaterialPageRoute(builder: (context) => screens.Step1());
+    case quoteStep2Screen:
+      return MaterialPageRoute(builder: (context) => screens.Step2());
     default:
       throw ('This route name does not exit');
   }

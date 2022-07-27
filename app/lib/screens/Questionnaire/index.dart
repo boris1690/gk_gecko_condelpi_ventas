@@ -1,10 +1,16 @@
+import 'package:app/core/quote/quote_manager.dart';
+import 'package:app/screens/Option/controller/option_controller.dart';
+import 'package:app/screens/Questionnaire/widgets/BuildQuestion/index.dart';
+import 'package:app/utils/common.dart';
+import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
+import 'package:collection/collection.dart';
 import 'package:flutter/material.dart';
 import 'package:app/widgets/widgets.dart' as widgets;
 import 'package:app/constants/constants.dart' as constants;
 import 'package:app/route/route.dart' as route;
-import 'package:flutter_layout_grid/flutter_layout_grid.dart';
 import 'package:app/theme/theme.dart' as theme;
 import './styles.dart';
+import 'package:get/get.dart';
 
 class Questionnaire extends StatefulWidget {
   const Questionnaire({Key? key}) : super(key: key);
@@ -14,438 +20,290 @@ class Questionnaire extends StatefulWidget {
 }
 
 class _QuestionnaireState extends State<Questionnaire> {
+  QuoteManager _quoteManager = Get.find();
+  Map _quote = {};
   String _type = "";
   String _status = "";
   String _status_option = "";
+  int _index = 0;
+  int _numberColumns = 0;
+  OptionController _controller = Get.put(OptionController());
 
-  void _handleTap(option) {
-    setState(() {
-      _type = option;
-    });
+  _handleParent(option) async {
+    // Validate button type
+    if (option['tip_respuesta'] == 'B') {
+      var action = option['act_respuesta'].split("_");
+
+      // Get data of product
+      var product = await _controller.getOptions(
+          {"filter[est_producto]": "A", "filter[cod_producto]": action[1]});
+
+      _quoteManager.setQuote({"subproduct": product[0]});
+      Navigator.pushNamed(context, route.quoteStep1Screen);
+    } else {
+      _quote['product']
+          .secciones[_index]['preguntas']
+          .asMap()
+          .forEach((index, pregunta) {
+        if (pregunta['cod_pregunta'] == option['cod_pregunta']) {
+          // Change value in parent
+          pregunta['respuestas'].asMap().forEach((index_1, respuesta) {
+            if (respuesta['tip_respuesta'] == option['tip_respuesta']) {
+              if (respuesta['cod_respuesta'] == option['cod_respuesta']) {
+                _quote['product'].secciones[_index]['preguntas'][index]
+                    ['respuestas'][index_1]['selected'] = true;
+              } else {
+                if (respuesta['tip_respuesta'] != "H") {
+                  _quote['product'].secciones[_index]['preguntas'][index]
+                      ['respuestas'][index_1]['selected'] = false;
+                }
+              }
+            }
+          });
+
+          var _count = 0;
+          // Change value in children
+          pregunta['respuestas'].asMap().forEach((index_1, respuesta) {
+            if (respuesta["cod_respuestapadre"] != -1) {
+              if (respuesta["cod_respuestapadre"] == option['cod_respuesta'] &&
+                  _count == 0) {
+                _quote['product'].secciones[_index]['preguntas'][index]
+                    ['respuestas'][index_1]['selected'] = true;
+                _count++;
+              } else {
+                _quote['product'].secciones[_index]['preguntas'][index]
+                    ['respuestas'][index_1]['selected'] = false;
+              }
+            }
+          });
+        }
+      });
+
+      setState(() {});
+    }
   }
 
-  void _handleStatus(option) {
-    setState(() {
-      _status = option;
-      _status_option = "${option}_1";
+  _handleChild(option) {
+    _quote['product']
+        .secciones[_index]['preguntas']
+        .asMap()
+        .forEach((index, pregunta) {
+      if (pregunta['cod_pregunta'] == option['cod_pregunta']) {
+        var selected_response = pregunta['respuestas']
+            .where((response) =>
+                response['selected'] == true &&
+                response['cod_respuestapadre'] == -1)
+            .toList();
+
+        var selected_subresponse = pregunta['respuestas']
+            .where((response) =>
+                response['cod_respuesta'] == option['cod_respuesta'])
+            .toList();
+
+        if (selected_subresponse[0]['cod_respuestapadre'] == -1 ||
+            (selected_response.length > 0 &&
+                selected_subresponse[0]['cod_respuestapadre'] ==
+                    selected_response[0]['cod_respuesta'])) {
+          // Foreach Responses
+          pregunta['respuestas'].asMap().forEach(
+            (index_1, respuesta) {
+              if (respuesta['cod_respuestapadre'] != -1) {
+                if (respuesta['cod_respuesta'] == option['cod_respuesta']) {
+                  _quote['product'].secciones[_index]['preguntas'][index]
+                      ['respuestas'][index_1]['selected'] = true;
+                } else {
+                  _quote['product'].secciones[_index]['preguntas'][index]
+                      ['respuestas'][index_1]['selected'] = false;
+                }
+              }
+            },
+          );
+        }
+      }
     });
+
+    setState(() {});
   }
 
-  void _handleOption(option) {
-    setState(() {
-      _status_option = option;
-    });
+  @override
+  void initState() {
+    super.initState();
+
+    _quote = _quoteManager.getQuote();
+
+    _numberColumns = _quote['product'].secciones[_index]['num_columnas'];
+
+    //print('preguntas ==>'. _quote['product']);
+
+    setState(() {});
   }
-
-  Widget _buildGrid() => Column(
-        children: [
-          Container(
-            alignment: Alignment.center,
-            decoration: Styles.boxDecorationStyle,
-            width: 300,
-            height: 35,
-            child: const Text("Tipo de bien", style: Styles.fontStyle),
-          ),
-          Container(
-            width: 300,
-            color: Color(0xFFF5F5F5),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Column(children: [
-                      SizedBox(height: 5),
-                      InkWell(
-                        onTap: () => _handleTap("1"),
-                        child: Container(
-                          height: 50.0,
-                          width: double.infinity,
-                          decoration:
-                              Styles.boxDecorationYellowStyle(_type == "1"),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: 7,
-                                right: 7,
-                                child: Icon(
-                                  _type == "1"
-                                      ? Icons.radio_button_checked_sharp
-                                      : Icons.radio_button_off,
-                                  size: 15,
-                                  color: theme.Colors.whiteColor,
-                                ),
-                              ),
-                              Align(
-                                child: Text(
-                                  "Primer bien",
-                                  style: Styles.fontStyle,
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 5),
-                      InkWell(
-                        onTap: () => _handleTap("2"),
-                        child: Container(
-                          height: 50.0,
-                          decoration:
-                              Styles.boxDecorationYellowStyle(_type == "2"),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                top: 7,
-                                right: 7,
-                                child: Icon(
-                                  _type == "2"
-                                      ? Icons.radio_button_checked_sharp
-                                      : Icons.radio_button_off,
-                                  size: 15,
-                                  color: theme.Colors.whiteColor,
-                                ),
-                              ),
-                              Align(
-                                child: Text(
-                                  "Segundo bien",
-                                  style: Styles.fontStyle,
-                                ),
-                              )
-                            ],
-                          ),
-                        ),
-                      ),
-                    ]),
-                  ),
-                  Expanded(
-                    flex: 1,
-                    child: InkWell(
-                      onTap: () => _handleTap("3"),
-                      child: Container(
-                        margin: EdgeInsets.only(top: 5, left: 2),
-                        height: 50.0,
-                        decoration:
-                            Styles.boxDecorationYellowStyle(_type == "3"),
-                        alignment: Alignment.center,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              top: 7,
-                              right: 7,
-                              child: Icon(
-                                _type == "3"
-                                    ? Icons.radio_button_checked_sharp
-                                    : Icons.radio_button_off,
-                                size: 15,
-                                color: theme.Colors.whiteColor,
-                              ),
-                            ),
-                            Align(
-                              child: Text(
-                                "Otro",
-                                style: Styles.fontStyle,
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
-
-  Widget _buildGrid2() => Column(
-        children: [
-          Container(
-            alignment: Alignment.center,
-            decoration: Styles.boxDecorationStyle,
-            width: 300,
-            height: 35,
-            child: const Text("Estado civil", style: Styles.fontStyle),
-          ),
-          Container(
-            width: 300,
-            color: Color(0xFFF5F5F5),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: InkWell(
-                      onTap: () => _handleStatus("C"),
-                      child: Container(
-                        margin: EdgeInsets.only(top: 5, right: 2),
-                        height: 50.0,
-                        decoration:
-                            Styles.boxDecorationYellowStyle(_status == "C"),
-                        alignment: Alignment.center,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              top: 7,
-                              right: 7,
-                              child: Icon(
-                                _status == "C"
-                                    ? Icons.radio_button_checked_sharp
-                                    : Icons.radio_button_off,
-                                size: 15,
-                                color: theme.Colors.whiteColor,
-                              ),
-                            ),
-                            Align(
-                              child: Text(
-                                "Casado",
-                                style: Styles.fontStyle,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      children: [
-                        SizedBox(height: 5),
-                        InkWell(
-                          onTap: () => _handleOption("C_1"),
-                          child: Container(
-                            height: 35.0,
-                            decoration: Styles.boxDecorationYellowStyle(
-                                _status_option == "C_1"),
-                            alignment: Alignment.center,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  top: 7,
-                                  right: 7,
-                                  child: Icon(
-                                    _status_option == "C_1"
-                                        ? Icons.radio_button_checked_sharp
-                                        : Icons.radio_button_off,
-                                    size: 15,
-                                    color: theme.Colors.whiteColor,
-                                  ),
-                                ),
-                                Align(
-                                  child: Text(
-                                    "2 a 3 miembros",
-                                    style: Styles.fontStyle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        InkWell(
-                          onTap: () => _handleOption("C_2"),
-                          child: Container(
-                            height: 35.0,
-                            decoration: Styles.boxDecorationYellowStyle(
-                                _status_option == "C_2"),
-                            alignment: Alignment.center,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  top: 7,
-                                  right: 7,
-                                  child: Icon(
-                                    _status_option == "C_2"
-                                        ? Icons.radio_button_checked_sharp
-                                        : Icons.radio_button_off,
-                                    size: 15,
-                                    color: theme.Colors.whiteColor,
-                                  ),
-                                ),
-                                Align(
-                                  child: Text(
-                                    "+ 3 miembros",
-                                    style: Styles.fontStyle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        InkWell(
-                          onTap: () => _handleOption("C_3"),
-                          child: Container(
-                            height: 35.0,
-                            decoration: Styles.boxDecorationYellowStyle(
-                              _status_option == "C_3",
-                            ),
-                            alignment: Alignment.center,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  top: 7,
-                                  right: 7,
-                                  child: Icon(
-                                    _status_option == "C_3"
-                                        ? Icons.radio_button_checked_sharp
-                                        : Icons.radio_button_off,
-                                    size: 15,
-                                    color: theme.Colors.whiteColor,
-                                  ),
-                                ),
-                                Align(
-                                  child: Text(
-                                    "Otro",
-                                    style: Styles.fontStyle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-          Container(
-            width: 300,
-            color: Color(0xFFF5F5F5),
-            child: IntrinsicHeight(
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Expanded(
-                    flex: 1,
-                    child: InkWell(
-                      onTap: () => _handleStatus("S"),
-                      child: Container(
-                        margin: EdgeInsets.only(top: 5, right: 2),
-                        height: 50.0,
-                        decoration:
-                            Styles.boxDecorationYellowStyle(_status == "S"),
-                        alignment: Alignment.center,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              top: 7,
-                              right: 7,
-                              child: Icon(
-                                _status == "S"
-                                    ? Icons.radio_button_checked_sharp
-                                    : Icons.radio_button_off,
-                                size: 15,
-                                color: theme.Colors.whiteColor,
-                              ),
-                            ),
-                            Align(
-                              child: Text(
-                                "Soltero",
-                                style: Styles.fontStyle,
-                              ),
-                            )
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    flex: 2,
-                    child: Column(
-                      children: [
-                        SizedBox(height: 5),
-                        InkWell(
-                          onTap: () => _handleOption("S_1"),
-                          child: Container(
-                            height: 50.0,
-                            decoration: Styles.boxDecorationYellowStyle(
-                              _status_option == "S_1",
-                            ),
-                            alignment: Alignment.center,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  top: 7,
-                                  right: 7,
-                                  child: Icon(
-                                    _status_option == "S_1"
-                                        ? Icons.radio_button_checked_sharp
-                                        : Icons.radio_button_off,
-                                    size: 15,
-                                    color: theme.Colors.whiteColor,
-                                  ),
-                                ),
-                                Align(
-                                  child: Text(
-                                    "19 años o más",
-                                    style: Styles.fontStyle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                        SizedBox(height: 5),
-                        InkWell(
-                          onTap: () => _handleOption("S_2"),
-                          child: Container(
-                            height: 50.0,
-                            decoration: Styles.boxDecorationYellowStyle(
-                              _status_option == "S_2",
-                            ),
-                            alignment: Alignment.center,
-                            child: Stack(
-                              children: [
-                                Positioned(
-                                  top: 7,
-                                  right: 7,
-                                  child: Icon(
-                                    _status_option == "S_2"
-                                        ? Icons.radio_button_checked_sharp
-                                        : Icons.radio_button_off,
-                                    size: 15,
-                                    color: theme.Colors.whiteColor,
-                                  ),
-                                ),
-                                Align(
-                                  child: Text(
-                                    "Menor de 19 años",
-                                    style: Styles.fontStyle,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      );
 
   Widget _buildQuestionnaire() => Expanded(
         child: Column(
           children: [
-            _buildGrid(),
-            SizedBox(height: 40),
-            _buildGrid2(),
+            ..._quote['product'].preguntas.map((question) {
+              var index = _quote['product'].preguntas.indexOf(question) + 1;
+
+              if (index <= (_index + 1) * 2 && index > _index * 2) {
+                return Column(children: [
+                  BuildQuestion(
+                    question: question,
+                    handleParent: _handleParent,
+                    handleChild: _handleChild,
+                  ),
+                  SizedBox(height: 40),
+                ]);
+              }
+
+              return Container();
+            }),
           ],
         ),
       );
 
-  Widget _buildCard() => Expanded(
-        child: Column(
+  onPrevStep() {
+    if (_index == 0) {
+      Navigator.of(context).pop();
+    } else {
+      setState(() {
+        _index--;
+        _numberColumns = _quote['product'].secciones[_index]['num_columnas'];
+      });
+    }
+  }
+
+  onNextStep() {
+    if ((_index + 1) == _quote['product'].secciones.length) {
+      Navigator.pushNamed(context, route.optionScreen);
+    } else {
+      setState(() {
+        _index++;
+        _numberColumns = _quote['product'].secciones[_index]['num_columnas'];
+      });
+    }
+
+    /* if (!validateProduct()) {
+      if (((_index + 1) * 2) == _quote['product'].preguntas.length) {
+        Navigator.pushNamed(context, route.optionScreen);
+      } else {
+        setState(() {
+          _index++;
+        });
+      }
+    } */
+  }
+
+  validateProduct() {
+    var _validate = false;
+    var _message = "";
+
+    _quote['product'].preguntas.asMap().forEach((index, pregunta) {
+      index = index + 1;
+      if (index <= (_index + 1) * 2 && index > _index * 2) {
+        //Count number of response selected
+        var selected = pregunta['respuestas']
+            .where((response) => response['selected'] == true)
+            .toList();
+
+        var subrespuestas = (pregunta['subrespuestas'] as List)
+            .map((e) => e as Map<String, dynamic>);
+
+        if (subrespuestas.isNotEmpty) {
+          var grupByParent =
+              groupBy(subrespuestas, (Map obj) => obj['cod_respuestapadre']);
+
+          var selected_subresponse = subrespuestas
+              .where((response) => response['selected'] == true)
+              .toList();
+
+          if (selected_subresponse.length == 0 && !_validate)
+          /* if (grupByParent.length != selected_subresponse.length &&
+              !_validate) */
+          {
+            _validate = true;
+            _message =
+                "Debe seleccionar una respuesta en " + pregunta['nom_pregunta'];
+          }
+        }
+
+        if (selected.length == 0 && !_validate) {
+          _validate = true;
+          _message =
+              "Debe seleccionar una respuesta en " + pregunta['nom_pregunta'];
+        }
+      }
+    });
+
+    if (_validate) {
+      Get.defaultDialog(
+          middleText: _message,
+          textConfirm: 'OK',
+          confirmTextColor: Colors.white,
+          onConfirm: () {
+            Get.back();
+          });
+    }
+
+    return _validate;
+  }
+
+  _returnListQuestion(preguntas) {
+    List widgets = [];
+    List respuestas = [];
+    preguntas.forEach(
+      (pregunta) {
+        pregunta['respuestas'].forEach((respuesta) {
+          respuestas.add(respuesta);
+        });
+      },
+    );
+
+    List respuestas_temp = respuestas.toList();
+
+    respuestas_temp
+        .sort((a, b) => a["ord_respuesta"].compareTo(b["ord_respuesta"]));
+
+    respuestas_temp.forEach((respuesta) {
+      widgets.add(
+        BuildQuestion(
+          question: respuesta,
+          handleParent: _handleParent,
+          handleChild: _handleChild,
+        ),
+      );
+    });
+
+    return widgets;
+  }
+
+  _returnListStaggeredTile(preguntas) {
+    List widgets = [];
+    List<Map<String, dynamic>> respuestas = [];
+    preguntas.forEach(
+      (pregunta) {
+        pregunta['respuestas'].forEach((respuesta) {
+          respuestas.add(respuesta);
+        });
+      },
+    );
+
+    List respuestas_temp = respuestas.toList();
+
+    respuestas_temp
+        .sort((a, b) => a["ord_respuesta"].compareTo(b["ord_respuesta"]));
+
+    respuestas_temp.forEach((respuesta) {
+      widgets.add(new StaggeredTile.count(
+        respuesta['col_respuesta'],
+        respuesta['fil_respuesta'],
+      ));
+    });
+
+    return widgets;
+  }
+
+  Widget _buildCard(responsive) => Expanded(
+        child: Row(
           children: <Widget>[
             SizedBox(height: 20),
             Row(mainAxisAlignment: MainAxisAlignment.center, children: <Widget>[
@@ -455,20 +313,6 @@ class _QuestionnaireState extends State<Questionnaire> {
               ),
             ]),
             SizedBox(height: 20),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: const <Widget>[
-                widgets.SquareRound(
-                  icon: constants.Images.car,
-                  product: "Auto",
-                  url: "",
-                  check: true,
-                  height: 160,
-                  width: 120,
-                )
-              ],
-            ),
           ],
         ),
       );
@@ -480,29 +324,136 @@ class _QuestionnaireState extends State<Questionnaire> {
       body: LayoutBuilder(builder: (builder, constraints) {
         var hasDetailPage = constraints.maxWidth > 600;
 
+        var titleRow = Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              _quote['product'].secciones[_index]['nom_seccion'],
+              style: Styles.titleStyle,
+            ),
+          ],
+        );
+
+        return Column(
+          children: [
+            titleRow,
+            SizedBox(
+              height: 20,
+            ),
+            Container(
+              width: 800,
+              height: 400,
+              child: StaggeredGridView.count(
+                  primary: false,
+                  key: ObjectKey(_numberColumns),
+                  crossAxisCount: _numberColumns,
+                  mainAxisSpacing: 4.0,
+                  crossAxisSpacing: 4.0,
+                  children: <Widget>[
+                    ..._returnListQuestion(
+                        _quote['product'].secciones[_index]['preguntas']),
+                  ],
+                  staggeredTiles: [
+                    ..._returnListStaggeredTile(
+                        _quote['product'].secciones[_index]['preguntas']),
+                  ]),
+            ),
+          ],
+        );
+
         if (hasDetailPage) {
-          return Row(children: [
-            _buildCard(),
-            _buildQuestionnaire(),
-          ]);
-        } else {
           return Column(
             children: [
-              Expanded(
-                child: ListView(
-                  shrinkWrap: true,
-                  children: [
-                    _buildCard(),
-                    SizedBox(height: 20),
-                    _buildQuestionnaire(),
-                  ],
-                ),
+              titleRow,
+              Row(
+                children: [
+                  /* _buildQuestionnaire(), */
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("Union libre"),
+                        Text("Otro"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("Casado"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("SOltero"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("2 a 3 miembros"),
+                        Text("+3 miembros"),
+                        Text("Otro"),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                children: [
+                  /* _buildQuestionnaire(), */
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("Primer bien"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("Segundo bien"),
+                      ],
+                    ),
+                  ),
+                  Expanded(
+                    child: Column(
+                      children: [
+                        Text("Otro"),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        } else {
+          return Stack(
+            children: [
+              Column(
+                children: [
+                  Expanded(
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: [
+                        titleRow,
+                        SizedBox(height: 20),
+                        /* _buildQuestionnaire(), */
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           );
         }
       }),
-      bottomNavigationBar: const widgets.Footer(),
+      bottomNavigationBar: widgets.Footer(
+        onPrevTap: () => onPrevStep(),
+        onNextTap: () => onNextStep(),
+      ),
     );
   }
 }

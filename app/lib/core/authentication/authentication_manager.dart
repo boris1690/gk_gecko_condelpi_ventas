@@ -1,4 +1,4 @@
-import 'package:app/core/cache_manager.dart';
+import 'package:app/core/authentication/cache_manager.dart';
 import 'package:get/get_state_manager/get_state_manager.dart';
 import 'package:get/get.dart';
 
@@ -19,8 +19,6 @@ class AuthenticationManager extends GetxController with CacheManager {
   void checkLoginStatus() {
     final token = getToken();
 
-    print("token");
-    print(token);
     if (token != null) {
       isLogged.value = true;
     }

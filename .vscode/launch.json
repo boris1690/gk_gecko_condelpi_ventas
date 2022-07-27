@@ -4,18 +4,13 @@
     // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
     "version": "0.2.0",
     "configurations": [
+
         {
             "name": "app",
             "cwd": "app",
             "request": "launch",
-            "type": "dart"
-        },
-        {
-            "name": "app (profile mode)",
-            "cwd": "app",
-            "request": "launch",
             "type": "dart",
-            "flutterMode": "profile"
+            "args": ["--web-renderer", "html"]
         }
     ]
 }

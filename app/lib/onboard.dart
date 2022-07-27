@@ -1,4 +1,4 @@
-import 'package:app/core/authentication_manager.dart';
+import 'package:app/core/authentication/authentication_manager.dart';
 import 'package:app/screens/Home/index.dart';
 import 'package:app/screens/screens.dart';
 import 'package:flutter/material.dart';

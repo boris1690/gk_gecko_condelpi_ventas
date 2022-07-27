@@ -4,28 +4,81 @@ import 'package:app/theme/theme.dart' as theme;
 import 'package:app/constants/constants.dart' as constants;
 
 class Footer extends StatelessWidget {
-  const Footer({Key? key}) : super(key: key);
+  final VoidCallback? onNextTap;
+  final VoidCallback? onPrevTap;
+  const Footer({
+    Key? key,
+    this.onNextTap,
+    this.onPrevTap,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(20.0),
+      padding: EdgeInsets.all(10.0),
+      decoration: Styles.boxDecorationStyle,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center, // Optional
-        mainAxisAlignment:
-            MainAxisAlignment.spaceEvenly, // Change to your own spacing
         children: [
-          Container(
-            child: Icon(Icons.arrow_back_ios, color: theme.Colors.yellowColor),
+          InkWell(
+            onTap: () {
+              onPrevTap?.call();
+            },
+            child: Row(
+              children: [
+                Image.asset(
+                  constants.Images.back,
+                  fit: BoxFit.contain,
+                  width: 20,
+                ),
+                SizedBox(
+                  width: 20,
+                ),
+                Text(
+                  "Atrás",
+                  style: Styles.fontStyle,
+                ),
+              ],
+            ),
           ),
           Expanded(
-            child: Container(
-              child: Icon(Icons.home_outlined, color: theme.Colors.yellowColor),
+            child: ElevatedButton(
+              onPressed: () {},
+              child: Icon(
+                Icons.home_outlined,
+                color: Colors.white,
+                size: 30,
+              ),
+              style: ElevatedButton.styleFrom(
+                shape: CircleBorder(),
+                padding: EdgeInsets.all(20),
+                primary: theme.Colors.yellowColor,
+                onPrimary: theme.Colors.primaryColor,
+              ),
             ),
           ),
           Container(
-            child:
-                Icon(Icons.arrow_forward_ios, color: theme.Colors.yellowColor),
+            child: InkWell(
+              onTap: () {
+                onNextTap?.call();
+              },
+              child: Row(
+                children: [
+                  Text(
+                    "Siguiente",
+                    style: Styles.fontStyle,
+                  ),
+                  SizedBox(
+                    width: 10,
+                  ),
+                  Image.asset(
+                    constants.Images.next,
+                    fit: BoxFit.contain,
+                    width: 20,
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),

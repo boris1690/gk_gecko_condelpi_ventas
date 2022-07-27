@@ -1,5 +1,5 @@
-import 'package:app/core/authentication_manager.dart';
-import 'package:app/core/cache_manager.dart';
+import 'package:app/core/authentication/authentication_manager.dart';
+import 'package:app/core/authentication/cache_manager.dart';
 import 'package:app/screens/Login/model/login_request_model.dart';
 import 'package:app/screens/Login/service/login_service.dart';
 import 'package:flutter/material.dart';

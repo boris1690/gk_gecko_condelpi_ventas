@@ -16,6 +16,7 @@ class Login extends StatefulWidget {
 class _LoginState extends State<Login> {
   final GlobalKey<FormState> formKey = GlobalKey();
   LoginController _controller = Get.put(LoginController());
+  bool isLoading = false;
 
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();
@@ -48,6 +49,7 @@ class _LoginState extends State<Login> {
               width: 500,
               padding: const EdgeInsets.all(10),
               child: TextFormField(
+                obscureText: true,
                 controller: passwordController,
                 validator: (value) {
                   return (value == null || value.isEmpty)
@@ -65,11 +67,25 @@ class _LoginState extends State<Login> {
               padding: const EdgeInsets.all(10),
               child: ElevatedButton(
                 style: Styles.buttonStyle,
-                child: const Text('Ingresar', style: Styles.fontStyle),
+                child: isLoading
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 1.5,
+                        ))
+                    : const Text('Ingresar', style: Styles.fontStyle),
                 onPressed: () async {
                   if (formKey.currentState?.validate() ?? false) {
+                    setState(() {
+                      isLoading = true;
+                    });
                     await _controller.loginUser(
                         emailController.text, passwordController.text);
+                    setState(() {
+                      isLoading = false;
+                    });
                   }
                 },
               ),

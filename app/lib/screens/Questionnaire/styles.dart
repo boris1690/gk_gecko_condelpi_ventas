@@ -15,8 +15,4 @@ class Styles {
   static const BoxDecoration boxDecorationStyle = BoxDecoration(
       color: theme.Colors.primaryColor,
       borderRadius: BorderRadius.all(Radius.circular(15.0)));
-
-  static BoxDecoration boxDecorationYellowStyle(active) => BoxDecoration(
-      color: active ? theme.Colors.yellowColor : theme.Colors.grayColor,
-      borderRadius: BorderRadius.all(Radius.circular(15.0)));
 }

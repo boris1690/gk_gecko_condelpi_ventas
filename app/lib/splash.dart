@@ -1,4 +1,5 @@
-import 'package:app/core/authentication_manager.dart';
+import 'package:app/core/quote/quote_manager.dart';
+import 'package:app/core/authentication/authentication_manager.dart';
 import 'package:app/onboard.dart';
 import 'package:app/screens/screens.dart';
 /* import 'package:app/home_view.dart'; */
@@ -9,6 +10,7 @@ import 'package:get/get.dart';
 
 class Splash extends StatelessWidget {
   final AuthenticationManager _authmanager = Get.put(AuthenticationManager());
+  final QuoteManager _quotemanager = Get.put(QuoteManager());
 
   Future<void> initializeSettings() async {
     _authmanager.checkLoginStatus();
